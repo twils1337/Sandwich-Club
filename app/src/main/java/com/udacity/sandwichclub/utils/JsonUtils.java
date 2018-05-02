@@ -21,12 +21,25 @@ public class JsonUtils {
         {
             StringTokenizer tokenizer = new StringTokenizer(json);
             Sandwich parsedSandwich = new Sandwich();
-            String token = tokenizer.nextToken("{}");
-            String value = "";
+            String token = "", value = "";
             Boolean getToken = true, ignoreCommas = false;
             String[] kvp;
             while (tokenizer.hasMoreElements())
             {
+                if (getToken)
+                {
+                    String delims = "\\{\\}";
+                    token = tokenizer.nextToken(ignoreCommas ? delims : delims+",");
+                    if  (token.startsWith(","))
+                    {
+                        token = token.substring(1);
+                    }
+                    ignoreCommas = false;
+                }
+                else
+                {
+                    getToken = true;
+                }
                 if(!token.endsWith(":"))
                 {
                     kvp = getJsonKVP(token);
@@ -36,19 +49,26 @@ public class JsonUtils {
                     {
                         case "mainName":
                             parsedSandwich.setMainName(value);
+                            ignoreCommas = true;
                             break;
                         case "alsoKnownAs":
                             List<String> aliases = parseJsonArray(value);
                             parsedSandwich.setAlsoKnownAs(aliases);
                             break;
                         case "placeOfOrigin":
-                            parsedSandwich.setPlaceOfOrigin(value.equals("") ? "Unknown": value);
+                            String location = getFullValue(value,tokenizer,true);
+                            parsedSandwich.setPlaceOfOrigin(value.isEmpty() ? "Unknown": location);
+                            getToken = location.isEmpty();
+                            if (!getToken)
+                                token = "description"+tokenizer.nextToken(",");
                             break;
                         case "description":
-                            String fullDescription = getFullDescription(value, tokenizer);
+                            String fullDescription = getFullValue(value, tokenizer,false);
                             parsedSandwich.setDescription(fullDescription);
                             getToken = false;
-                            token = "image"+tokenizer.nextToken(",");
+                            token = tokenizer.nextToken(",");
+                            if (!token.startsWith("\"image\""))
+                                token = "image"+token;
                             break;
                         case "image":
                             parsedSandwich.setImage(value);
@@ -56,31 +76,14 @@ public class JsonUtils {
                             break;
                         case "ingredients":
                             List<String> ingredients = parseJsonArray(value);
+                            parsedSandwich.setIngredients(ingredients);
                             break;
                         default:
-                            Log.i("Info", "Attribute: "+token+" not used.");
+                            Log.e("ERROR", "Attribute: "+token+" not used.");
                     }
 
                 }
-                if (getToken)
-                {
-                    String delims = "\\{\\}";
-                    token = tokenizer.nextToken(ignoreCommas ? delims : delims+",");
-                    if (ignoreCommas)
-                    {
-                        ignoreCommas = false;
-                        token = token.substring(1);
-                    }
-                }
-                else
-                {
-                  getToken = true;
-                }
-
             }
-            kvp = getJsonKVP(token);
-            List<String> ingredients = parseJsonArray(kvp[1]);
-            parsedSandwich.setIngredients(ingredients);
             return parsedSandwich;
         }
     }
@@ -97,15 +100,27 @@ public class JsonUtils {
         }
     }
 
-    public static String getFullDescription(String partialDescription, StringTokenizer tokenizer)
+    public static String getFullValue(String partialValue, StringTokenizer tokenizer, boolean gettingOrigin)
     {
-        StringBuilder sb = new StringBuilder(partialDescription);
+        if (partialValue.isEmpty())
+        {
+            return "";
+        }
+        else if(partialValue.endsWith("."))
+        {
+            return partialValue;
+        }
+        StringBuilder sb = new StringBuilder(partialValue);
         String token = tokenizer.nextToken(":");
-        token = token.substring(0,token.lastIndexOf(","));
-        token = token.substring(0,token.length()-1);
-        sb.append(token);
+        if ((gettingOrigin && countChar(token, ",") >= 2) || !gettingOrigin)
+        {
+            token = token.substring(0,token.lastIndexOf(","));
+            token = token.substring(0,token.length()-1);
+            sb.append(token);
+        }
         return sb.toString();
     }
+
 
     public static String[] getJsonKVP(String token)
     {
@@ -114,5 +129,15 @@ public class JsonUtils {
         String value = splitter[1].substring(0,splitter[1].length()).replaceAll("\"","");
         String[] kvp = {token, value};
         return kvp;
+    }
+
+    private static int countChar(String s, String c)
+    {
+        int count = 0;
+        for (int i = 0; i < s.length(); ++i)
+        {
+            count += c.equals(s.charAt(i)) ? 1 : 0;
+        }
+        return count;
     }
 }
