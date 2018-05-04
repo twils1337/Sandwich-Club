@@ -4,11 +4,20 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.widget.ImageView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.squareup.picasso.Picasso;
 import com.udacity.sandwichclub.model.Sandwich;
 import com.udacity.sandwichclub.utils.JsonUtils;
+
+import org.w3c.dom.Text;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 public class DetailActivity extends AppCompatActivity {
 
@@ -43,7 +52,7 @@ public class DetailActivity extends AppCompatActivity {
             return;
         }
 
-        populateUI();
+        populateUI(sandwich);
         Picasso.with(this)
                 .load(sandwich.getImage())
                 .into(ingredientsIv);
@@ -56,7 +65,35 @@ public class DetailActivity extends AppCompatActivity {
         Toast.makeText(this, R.string.detail_error_message, Toast.LENGTH_SHORT).show();
     }
 
-    private void populateUI() {
+        private void populateUI(final Sandwich sandwich) {
+        Map<Integer, String> valueOfTextID = new HashMap<Integer, String>()
+        {{
+            put(R.id.origin_tv, sandwich.getPlaceOfOrigin());
+            put(R.id.also_known_tv, getTextViewValuesFromList(sandwich.getAlsoKnownAs()));
+            put(R.id.description_tv,sandwich.getDescription());
+            put(R.id.ingredients_tv,getTextViewValuesFromList(sandwich.getIngredients()));
+        }};
+        for (int id : valueOfTextID.keySet())
+        {
+            TextView tv =  (TextView) findViewById(id);
+            tv.setText(valueOfTextID.get(id) + "\n");
+        }
+    }
 
+    private String getTextViewValuesFromList(List<String> values)
+    {
+        if (values.isEmpty())
+        {
+            return "N/A";
+        }
+        else
+        {
+            StringBuilder sb = new StringBuilder(values.get(0));
+            for (int i = 1; i < values.size(); ++i)
+            {
+                sb.append((", " + values.get(i)));
+            }
+            return sb.toString();
+        }
     }
 }
