@@ -11,10 +11,6 @@ import com.squareup.picasso.Picasso;
 import com.udacity.sandwichclub.model.Sandwich;
 import com.udacity.sandwichclub.utils.JsonUtils;
 
-import org.w3c.dom.Text;
-
-import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -23,6 +19,9 @@ public class DetailActivity extends AppCompatActivity {
 
     public static final String EXTRA_POSITION = "extra_position";
     private static final int DEFAULT_POSITION = -1;
+    private static  final int[] IMG_IDS_ON_ERROR = {R.drawable.ham_n_cheese, R.drawable.bosna,
+    R.drawable.chivito, R.drawable.club_sandwich, R.drawable.gua_bao, R.drawable.medianoche,
+    R.drawable.pljeskavica, R.drawable.roujiamo,R.drawable.shawarma, R.drawable.vada_paav};
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -55,6 +54,7 @@ public class DetailActivity extends AppCompatActivity {
         populateUI(sandwich);
         Picasso.with(this)
                 .load(sandwich.getImage())
+                .error(IMG_IDS_ON_ERROR[position])
                 .into(ingredientsIv);
 
         setTitle(sandwich.getMainName());
